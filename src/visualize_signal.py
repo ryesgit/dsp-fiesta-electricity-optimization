@@ -26,7 +26,26 @@ def load_signal(filepath):
     if not all(col in df.columns for col in required_cols):
         raise ValueError(f"CSV must contain columns: {required_cols}")
     
+    # Validate minimum data size
+    if len(df) < 2:
+        raise ValueError(f"CSV must contain at least 2 samples, found {len(df)}")
+    
     return df
+
+def calculate_sampling_frequency(df):
+    """Calculate sampling frequency from time data.
+    
+    Args:
+        df: DataFrame with time column
+        
+    Returns:
+        Calculated sampling frequency in Hz
+    """
+    if len(df) < 2:
+        return FS
+    
+    time_diff = df['time'].iloc[1] - df['time'].iloc[0]
+    return 1 / time_diff if time_diff > 0 else FS
 
 def plot_signal(df, title="Electrical Signal Waveform", show_fs=True):
     """Plot voltage and current signals in time domain.
@@ -57,8 +76,7 @@ def plot_signal(df, title="Electrical Signal Waveform", show_fs=True):
     # Display sampling frequency if requested
     if show_fs:
         # Calculate actual sampling frequency from data
-        time_diff = df['time'].iloc[1] - df['time'].iloc[0]
-        calculated_fs = 1 / time_diff if time_diff > 0 else FS
+        calculated_fs = calculate_sampling_frequency(df)
         
         fig.suptitle(f'{title}\nSampling Frequency (fs) = {calculated_fs:.0f} Hz', 
                      fontsize=14, fontweight='bold')
@@ -107,10 +125,15 @@ def main():
         start, end = args.time_range
         df = df[(df['time'] >= start) & (df['time'] <= end)]
         print(f"Filtered to time range [{start}, {end}] s: {len(df)} samples")
+        
+        # Validate filtered data is not empty
+        if len(df) == 0:
+            raise ValueError(f"No data found in time range [{start}, {end}] s")
+        if len(df) < 2:
+            raise ValueError(f"Insufficient data in time range [{start}, {end}] s (need at least 2 samples)")
     
     # Display sampling frequency
-    time_diff = df['time'].iloc[1] - df['time'].iloc[0]
-    calculated_fs = 1 / time_diff if time_diff > 0 else FS
+    calculated_fs = calculate_sampling_frequency(df)
     print(f"Sampling Frequency (fs) = {calculated_fs:.0f} Hz")
     
     # Plot signal
