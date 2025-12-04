@@ -6,6 +6,8 @@ import os
 
 # Constants
 FS = 1000  # Sampling frequency (Hz) - same as in generate_data.py
+MAX_PEAK_ANNOTATIONS = 5  # Maximum number of peaks to annotate in frequency plots
+FREQ_TOLERANCE_MULTIPLIER = 2  # Multiplier for frequency tolerance in harmonic detection
 
 def load_signal(filepath):
     """Load signal data from CSV file.
@@ -141,7 +143,7 @@ def compare_spectra(normal_df, illegal_df, signal_type='current', xlim=300, save
     # Find peaks above a threshold
     threshold = 0.1 * np.max(mag_normal)
     peaks_idx = np.where(mag_normal > threshold)[0]
-    for idx in peaks_idx[:5]:  # Annotate first 5 peaks
+    for idx in peaks_idx[:MAX_PEAK_ANNOTATIONS]:  # Annotate top peaks
         if freq_normal[idx] > 0:
             ax1.annotate(f'{freq_normal[idx]:.0f} Hz', 
                         xy=(freq_normal[idx], mag_normal[idx]),
@@ -160,7 +162,7 @@ def compare_spectra(normal_df, illegal_df, signal_type='current', xlim=300, save
     # Annotate fundamental frequency and harmonics for illegal tap
     threshold = 0.1 * np.max(mag_illegal)
     peaks_idx = np.where(mag_illegal > threshold)[0]
-    for idx in peaks_idx[:5]:  # Annotate first 5 peaks
+    for idx in peaks_idx[:MAX_PEAK_ANNOTATIONS]:  # Annotate top peaks
         if freq_illegal[idx] > 0:
             ax2.annotate(f'{freq_illegal[idx]:.0f} Hz', 
                         xy=(freq_illegal[idx], mag_illegal[idx]),
@@ -182,12 +184,25 @@ def compare_spectra(normal_df, illegal_df, signal_type='current', xlim=300, save
     return fig
 
 def _get_ordinal_suffix(n):
-    """Get ordinal suffix for a number (st, nd, rd, th)."""
-    if n == 1:
+    """Get ordinal suffix for a number (st, nd, rd, th).
+    
+    Args:
+        n: Integer number
+        
+    Returns:
+        Ordinal suffix string ('st', 'nd', 'rd', or 'th')
+    """
+    # Special case for numbers ending in 11, 12, 13 (e.g., 11th, 12th, 13th)
+    if 10 <= n % 100 <= 13:
+        return 'th'
+    
+    # Regular cases based on last digit
+    last_digit = n % 10
+    if last_digit == 1:
         return 'st'
-    elif n == 2:
+    elif last_digit == 2:
         return 'nd'
-    elif n == 3:
+    elif last_digit == 3:
         return 'rd'
     else:
         return 'th'
@@ -225,7 +240,7 @@ def analyze_harmonics(df, signal_type='current', fundamental_freq=50):
         # Find the closest frequency bin
         freq_idx = np.argmin(np.abs(frequencies - harmonic_freq))
         
-        if np.abs(frequencies[freq_idx] - harmonic_freq) < freq_tolerance * 2:
+        if np.abs(frequencies[freq_idx] - harmonic_freq) < freq_tolerance * FREQ_TOLERANCE_MULTIPLIER:
             harmonic_magnitude = magnitude[freq_idx]
             magnitude_percent = (harmonic_magnitude / fundamental_magnitude) * 100 if harmonic_num > 1 else 100
             
