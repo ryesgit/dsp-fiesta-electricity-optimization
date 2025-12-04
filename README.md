@@ -54,6 +54,13 @@ python src/visualize_signal.py data/illegal_tap.csv --time-range 2 5 --save tap_
 - **Clear Transitions**: Time-domain transitions are clearly visible (e.g., illegal tap starting at t=3s)
 - **Flexible Time Range**: Zoom into specific time intervals for detailed analysis
 
+## FFT & Frequency-Domain Analysis
+Transform time-domain signals into frequency domain using Fast Fourier Transform (FFT) to identify harmonic content and spectral distortion.
+
+### Basic Usage
+```bash
+# Analyze frequency spectrum of a single signal
+python src/fft_analysis.py data/normal_load.csv
 ## RMS & Power Feature Extraction
 Extract Root Mean Square (RMS) and power metrics from electrical signals to detect anomalies and illegal tapping.
 
@@ -137,6 +144,39 @@ python src/apply_filter.py data/normal_load.csv --cutoff 150
 
 ### Advanced Options
 ```bash
+# Analyze voltage signal (default is current)
+python src/fft_analysis.py data/normal_load.csv --signal voltage
+
+# Compare normal load vs illegal tap spectra
+python src/fft_analysis.py data/normal_load.csv --compare data/illegal_tap.csv
+
+# Display harmonic analysis table using pandas
+python src/fft_analysis.py data/illegal_tap.csv --show-harmonics
+
+# Set frequency range limit (e.g., 0-500 Hz)
+python src/fft_analysis.py data/illegal_tap.csv --xlim 500
+
+# Save plot to file
+python src/fft_analysis.py data/normal_load.csv --compare data/illegal_tap.csv --save spectrum_comparison.png
+
+# Combined: Compare with harmonics table
+python src/fft_analysis.py data/normal_load.csv --compare data/illegal_tap.csv --show-harmonics --xlim 300
+```
+
+### Features
+- **FFT Computation**: Computes Fast Fourier Transform of voltage/current signals
+- **Frequency Spectrum Plotting**: Visualizes magnitude spectrum with frequency bins
+- **Harmonic Analysis**: Identifies and quantifies fundamental frequency (50 Hz) and harmonics using pandas DataFrames
+- **Spectral Comparison**: Side-by-side comparison of normal vs illegal tap signals
+- **Automatic Peak Detection**: Annotates significant frequency components
+- **Distortion Detection**: Clear visualization of 3rd and 5th harmonics in illegal tap scenarios
+
+### Key Observations
+- **Normal Load**: Shows clean fundamental frequency (50 Hz) with minimal harmonics (<0.1%)
+- **Illegal Tap**: Exhibits clear spectral distortion with:
+  - **3rd Harmonic (150 Hz)**: ~11-12% of fundamental magnitude
+  - **5th Harmonic (250 Hz)**: ~5-6% of fundamental magnitude
+  - These harmonics indicate non-linear loads typical of illegal tapping with electronic devices
 # Save filtered data to CSV
 python src/apply_filter.py data/normal_load.csv --output data/normal_load_filtered.csv
 
