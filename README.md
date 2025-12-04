@@ -57,6 +57,17 @@ python src/visualize_signal.py data/illegal_tap.csv --time-range 2 5 --save tap_
 ## Digital Noise Filtering
 Apply low-pass Butterworth filter to remove high-frequency noise from electrical signals while preserving the fundamental frequency and harmonics.
 
+### Examples
+Visual demonstrations of noise filtering effectiveness:
+
+**Normal Load (Zoomed: 0-0.1s)**
+![Normal Load Filtering](examples/normal_load_zoom.png)
+*The filtered signal (green) is visibly smoother than the noisy original (light), clearly showing noise reduction while preserving the 50 Hz sinusoidal waveform.*
+
+**Illegal Tap Transition (2.8-3.2s)**
+![Illegal Tap Transition](examples/illegal_tap_transition.png)
+*The filter removes noise while preserving the important transition at t=3s where the illegal tap event occurs. Note the current amplitude change is maintained.*
+
 ### Basic Usage
 ```bash
 # Apply filter and display interactive plots
