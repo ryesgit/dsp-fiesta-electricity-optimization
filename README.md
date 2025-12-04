@@ -61,6 +61,85 @@ Transform time-domain signals into frequency domain using Fast Fourier Transform
 ```bash
 # Analyze frequency spectrum of a single signal
 python src/fft_analysis.py data/normal_load.csv
+## RMS & Power Feature Extraction
+Extract Root Mean Square (RMS) and power metrics from electrical signals to detect anomalies and illegal tapping.
+
+### Mathematical Formulas
+
+#### RMS (Root Mean Square)
+The RMS value represents the effective value of an AC signal:
+
+- **RMS Voltage:**  
+  ```
+  V_rms = √(1/N × Σ(V²))
+  ```
+  where V is the instantaneous voltage and N is the number of samples
+
+- **RMS Current:**  
+  ```
+  I_rms = √(1/N × Σ(I²))
+  ```
+  where I is the instantaneous current and N is the number of samples
+
+#### Power Calculations
+- **Instantaneous Power:**  
+  ```
+  P(t) = V(t) × I(t)
+  ```
+  Power at each time instant
+
+- **Average Power:**  
+  ```
+  P_avg = 1/N × Σ(P(t)) = 1/N × Σ(V(t) × I(t))
+  ```
+  Mean power over the entire signal duration
+
+### Usage
+
+#### Analyze a Single File
+```bash
+python src/feature_extraction.py data/normal_load.csv
+```
+
+#### Compare Normal Load vs Illegal Tap
+```bash
+python src/feature_extraction.py --compare
+```
+
+### Output Metrics
+The feature extraction tool computes and displays:
+- **RMS Voltage (V)**: Effective voltage value
+- **RMS Current (A)**: Effective current value  
+- **Average Power (W)**: Mean power consumption
+- **Max/Min Power (W)**: Peak power values
+- **Percentage Change**: Comparison between normal and anomalous scenarios
+
+### Detection Capability
+The system successfully detects illegal electricity tapping by identifying:
+- Elevated RMS current (typically >100% increase)
+- Elevated average power (typically >100% increase)
+- Anomaly alerts when power increase exceeds 50% threshold
+## Digital Noise Filtering
+Apply low-pass Butterworth filter to remove high-frequency noise from electrical signals while preserving the fundamental frequency and harmonics.
+
+### Examples
+Visual demonstrations of noise filtering effectiveness:
+
+**Normal Load (Zoomed: 0-0.1s)**
+![Normal Load Filtering](examples/normal_load_zoom.png)
+*The filtered signal (green) is visibly smoother than the noisy original (light), clearly showing noise reduction while preserving the 50 Hz sinusoidal waveform.*
+
+**Illegal Tap Transition (2.8-3.2s)**
+![Illegal Tap Transition](examples/illegal_tap_transition.png)
+*The filter removes noise while preserving the important transition at t=3s where the illegal tap event occurs. Note the current amplitude change is maintained.*
+
+### Basic Usage
+```bash
+# Apply filter and display interactive plots
+python src/apply_filter.py data/normal_load.csv
+
+# Filter with custom cutoff frequency
+python src/apply_filter.py data/normal_load.csv --cutoff 150
 ```
 
 ### Advanced Options
@@ -98,3 +177,36 @@ python src/fft_analysis.py data/normal_load.csv --compare data/illegal_tap.csv -
   - **3rd Harmonic (150 Hz)**: ~11-12% of fundamental magnitude
   - **5th Harmonic (250 Hz)**: ~5-6% of fundamental magnitude
   - These harmonics indicate non-linear loads typical of illegal tapping with electronic devices
+# Save filtered data to CSV
+python src/apply_filter.py data/normal_load.csv --output data/normal_load_filtered.csv
+
+# Save before/after comparison plots
+python src/apply_filter.py data/illegal_tap.csv --save-plot filtered_analysis.png
+
+# Focus on specific time range (e.g., around illegal tap transition)
+python src/apply_filter.py data/illegal_tap.csv --time-range 2.5 4.5 --save-plot tap_filtered.png
+
+# Custom filter parameters
+python src/apply_filter.py data/normal_load.csv --cutoff 200 --order 6
+
+# Choose plot type (comparison, overlay, or both)
+python src/apply_filter.py data/normal_load.csv --plot overlay --save-plot overlay.png
+```
+
+### Filter Parameters
+- **`--cutoff`**: Cutoff frequency in Hz (default: 200 Hz)
+  - Frequencies above this are attenuated
+  - For 50 Hz power signals, 200 Hz preserves fundamental + harmonics while removing noise
+- **`--order`**: Filter order (default: 4)
+  - Higher order = sharper cutoff but more computational cost
+  - Order 4 provides good balance between smoothness and phase preservation
+- **`--plot`**: Plot type - `comparison` (side-by-side), `overlay` (before/after overlaid), or `both` (default)
+- **`--output`**: Save filtered signal data to CSV file
+- **`--save-plot`**: Save plots to image file instead of displaying
+
+### Features
+- **Low-Pass Butterworth Filter**: Smooth frequency response with minimal passband ripple
+- **Zero-Phase Filtering**: Uses `filtfilt` to avoid phase distortion in the filtered signal
+- **Noise Reduction Metrics**: Displays standard deviation of removed noise
+- **Before/After Visualization**: Side-by-side comparison and overlay plots
+- **Preserves Signal Characteristics**: Maintains important features like illegal tap transitions while removing noise
