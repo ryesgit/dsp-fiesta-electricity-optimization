@@ -53,3 +53,62 @@ python src/visualize_signal.py data/illegal_tap.csv --time-range 2 5 --save tap_
 - **Sampling Frequency Display**: Shows the sampling frequency (fs = 1000 Hz) in the plot
 - **Clear Transitions**: Time-domain transitions are clearly visible (e.g., illegal tap starting at t=3s)
 - **Flexible Time Range**: Zoom into specific time intervals for detailed analysis
+
+## RMS & Power Feature Extraction
+Extract Root Mean Square (RMS) and power metrics from electrical signals to detect anomalies and illegal tapping.
+
+### Mathematical Formulas
+
+#### RMS (Root Mean Square)
+The RMS value represents the effective value of an AC signal:
+
+- **RMS Voltage:**  
+  ```
+  V_rms = √(1/N × Σ(V²))
+  ```
+  where V is the instantaneous voltage and N is the number of samples
+
+- **RMS Current:**  
+  ```
+  I_rms = √(1/N × Σ(I²))
+  ```
+  where I is the instantaneous current and N is the number of samples
+
+#### Power Calculations
+- **Instantaneous Power:**  
+  ```
+  P(t) = V(t) × I(t)
+  ```
+  Power at each time instant
+
+- **Average Power:**  
+  ```
+  P_avg = 1/N × Σ(P(t)) = 1/N × Σ(V(t) × I(t))
+  ```
+  Mean power over the entire signal duration
+
+### Usage
+
+#### Analyze a Single File
+```bash
+python src/feature_extraction.py data/normal_load.csv
+```
+
+#### Compare Normal Load vs Illegal Tap
+```bash
+python src/feature_extraction.py --compare
+```
+
+### Output Metrics
+The feature extraction tool computes and displays:
+- **RMS Voltage (V)**: Effective voltage value
+- **RMS Current (A)**: Effective current value  
+- **Average Power (W)**: Mean power consumption
+- **Max/Min Power (W)**: Peak power values
+- **Percentage Change**: Comparison between normal and anomalous scenarios
+
+### Detection Capability
+The system successfully detects illegal electricity tapping by identifying:
+- Elevated RMS current (typically >100% increase)
+- Elevated average power (typically >100% increase)
+- Anomaly alerts when power increase exceeds 50% threshold
