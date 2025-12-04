@@ -3,6 +3,11 @@ import pandas as pd
 import argparse
 import os
 
+# Constants
+ANOMALY_THRESHOLD_PERCENT = 50  # Power increase threshold for anomaly detection
+DEFAULT_NORMAL_LOAD_PATH = 'data/normal_load.csv'
+DEFAULT_ILLEGAL_TAP_PATH = 'data/illegal_tap.csv'
+
 def calculate_rms(signal):
     """Calculate Root Mean Square (RMS) of a signal.
     
@@ -132,11 +137,12 @@ def main():
         print("COMPARATIVE ANALYSIS: Normal Load vs Illegal Tap")
         print("="*60)
         
-        normal_path = 'data/normal_load.csv'
-        tap_path = 'data/illegal_tap.csv'
+        normal_path = DEFAULT_NORMAL_LOAD_PATH
+        tap_path = DEFAULT_ILLEGAL_TAP_PATH
         
         if not os.path.exists(normal_path) or not os.path.exists(tap_path):
-            print("\nError: Data files not found. Please run generate_data.py first:")
+            print("\nError: Data files not found.")
+            print("Please run generate_data.py from the project root:")
             print("  python src/generate_data.py")
             return
         
@@ -171,7 +177,7 @@ def main():
         # Highlight the illegal tap detection
         print(f"\n{'DETECTION RESULT':^60}")
         print(f"{'-'*60}")
-        if power_change > 50:  # Significant increase
+        if power_change > ANOMALY_THRESHOLD_PERCENT:
             print(f"  ⚠️  ANOMALY DETECTED: Power increased by {power_change:.1f}%")
             print(f"  This indicates potential illegal electricity tapping!")
         else:
