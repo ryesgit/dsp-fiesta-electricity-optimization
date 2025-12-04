@@ -5,6 +5,26 @@ A Digital Signal Processing (DSP)-based power monitoring and anomaly detection s
 ## Overview
 This project analyzes voltage and current waveforms using core DSP techniques to identify abnormal power usage and illegal electricity tapping.
 
+### System Architecture
+```mermaid
+graph LR
+    subgraph "Data Acquisition"
+        A[Power Source] --> B[Sensors (V/I)]
+        B --> C[ADC / Data Gen]
+    end
+    
+    subgraph "DSP Core"
+        C --> D[Preprocessing (Filter)]
+        D --> E[Feature Extraction]
+        E --> F[Anomaly Detection]
+    end
+    
+    subgraph "Visualization"
+        F --> G[Real-Time Dashboard]
+        G --> H[Alerts & Logs]
+    end
+```
+
 ## Setup
 1. Create a virtual environment:
    ```bash
@@ -25,90 +45,48 @@ This will create the following files in the `data/` directory:
 - `normal_load.csv`: Simulated normal power usage.
 - `illegal_tap.csv`: Simulated illegal tapping with amplitude changes and harmonic distortion.
 
-## Signal Visualization
-To visualize electrical signal waveforms in the time domain:
+## Analysis & Visualization
 
-### Basic Usage
+### 1. Signal Visualization
+Visualize the time-domain waveforms:
 ```bash
-python src/visualize_signal.py data/normal_load.csv
+python src/visualize_signal.py data/normal_load.csv --time-range 0 0.1
 ```
 
-### Advanced Options
+### 2. Signal Filtering
+Apply a low-pass filter to remove high-frequency noise:
 ```bash
-# Save plot to file
-python src/visualize_signal.py data/normal_load.csv --save output.png
-
-# Visualize specific time range (e.g., 0-2 seconds)
-python src/visualize_signal.py data/illegal_tap.csv --time-range 0 2
-
-# Custom title
-python src/visualize_signal.py data/illegal_tap.csv --title "Illegal Tap Detection"
-
-# Combined options
-python src/visualize_signal.py data/illegal_tap.csv --time-range 2 5 --save tap_analysis.png --title "Tap Event (2-5s)"
+python src/apply_filter.py data/normal_load.csv --output data/normal_load_filtered.csv --plot both
 ```
 
-### Features
-- **Time-Domain Visualization**: Plots both voltage and current waveforms against time
-- **Sampling Frequency Display**: Shows the sampling frequency (fs = 1000 Hz) in the plot
-- **Clear Transitions**: Time-domain transitions are clearly visible (e.g., illegal tap starting at t=3s)
-- **Flexible Time Range**: Zoom into specific time intervals for detailed analysis
-
-## Digital Noise Filtering
-Apply low-pass Butterworth filter to remove high-frequency noise from electrical signals while preserving the fundamental frequency and harmonics.
-
-### Examples
-Visual demonstrations of noise filtering effectiveness:
-
-**Normal Load (Zoomed: 0-0.1s)**
-![Normal Load Filtering](examples/normal_load_zoom.png)
-*The filtered signal (green) is visibly smoother than the noisy original (light), clearly showing noise reduction while preserving the 50 Hz sinusoidal waveform.*
-
-**Illegal Tap Transition (2.8-3.2s)**
-![Illegal Tap Transition](examples/illegal_tap_transition.png)
-*The filter removes noise while preserving the important transition at t=3s where the illegal tap event occurs. Note the current amplitude change is maintained.*
-
-### Basic Usage
+### 3. Harmonic Distortion (THD) Analysis
+Analyze the Total Harmonic Distortion (THD) to detect non-linear loads (often associated with illegal tapping):
 ```bash
-# Apply filter and display interactive plots
-python src/apply_filter.py data/normal_load.csv
-
-# Filter with custom cutoff frequency
-python src/apply_filter.py data/normal_load.csv --cutoff 150
+python src/analyze_thd.py data/illegal_tap.csv --save-plot docs/illegal_thd.png
 ```
+- **Normal Load**: Typically low THD (< 5%).
+- **Illegal Tap**: High THD due to harmonic distortion (e.g., 3rd and 5th harmonics).
 
-### Advanced Options
+### 4. Anomaly Detection
+Run the automated anomaly detection script to classify signals:
 ```bash
-# Save filtered data to CSV
-python src/apply_filter.py data/normal_load.csv --output data/normal_load_filtered.csv
-
-# Save before/after comparison plots
-python src/apply_filter.py data/illegal_tap.csv --save-plot filtered_analysis.png
-
-# Focus on specific time range (e.g., around illegal tap transition)
-python src/apply_filter.py data/illegal_tap.csv --time-range 2.5 4.5 --save-plot tap_filtered.png
-
-# Custom filter parameters
-python src/apply_filter.py data/normal_load.csv --cutoff 200 --order 6
-
-# Choose plot type (comparison, overlay, or both)
-python src/apply_filter.py data/normal_load.csv --plot overlay --save-plot overlay.png
+python src/detect_anomaly.py data/illegal_tap.csv
 ```
+**Features Extracted:**
+- **RMS Voltage/Current**: Root Mean Square values.
+- **Apparent Power**: $V_{rms} \times I_{rms}$.
+- **THD**: Total Harmonic Distortion.
 
-### Filter Parameters
-- **`--cutoff`**: Cutoff frequency in Hz (default: 200 Hz)
-  - Frequencies above this are attenuated
-  - For 50 Hz power signals, 200 Hz preserves fundamental + harmonics while removing noise
-- **`--order`**: Filter order (default: 4)
-  - Higher order = sharper cutoff but more computational cost
-  - Order 4 provides good balance between smoothness and phase preservation
-- **`--plot`**: Plot type - `comparison` (side-by-side), `overlay` (before/after overlaid), or `both` (default)
-- **`--output`**: Save filtered signal data to CSV file
-- **`--save-plot`**: Save plots to image file instead of displaying
+**Detection Logic:**
+- If **THD > 5%**, the signal is flagged as an **ANOMALY** (High Harmonic Distortion).
 
-### Features
-- **Low-Pass Butterworth Filter**: Smooth frequency response with minimal passband ripple
-- **Zero-Phase Filtering**: Uses `filtfilt` to avoid phase distortion in the filtered signal
-- **Noise Reduction Metrics**: Displays standard deviation of removed noise
-- **Before/After Visualization**: Side-by-side comparison and overlay plots
-- **Preserves Signal Characteristics**: Maintains important features like illegal tap transitions while removing noise
+## Real-Time Dashboard
+Launch the real-time visualization dashboard to simulate live monitoring:
+```bash
+python src/dashboard.py data/illegal_tap.csv
+```
+**Features:**
+- **Live Waveforms**: Scrolling plot of voltage and current.
+- **Real-Time FFT**: Dynamic frequency spectrum of the current signal.
+- **Metrics**: Live display of RMS, Power, and THD.
+- **Anomaly Alert**: Visual alert (Green/Red) indicating system status.
