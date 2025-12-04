@@ -181,6 +181,17 @@ def compare_spectra(normal_df, illegal_df, signal_type='current', xlim=300, save
     
     return fig
 
+def _get_ordinal_suffix(n):
+    """Get ordinal suffix for a number (st, nd, rd, th)."""
+    if n == 1:
+        return 'st'
+    elif n == 2:
+        return 'nd'
+    elif n == 3:
+        return 'rd'
+    else:
+        return 'th'
+
 def analyze_harmonics(df, signal_type='current', fundamental_freq=50):
     """Analyze and display harmonic content using pandas DataFrame.
     
@@ -199,22 +210,30 @@ def analyze_harmonics(df, signal_type='current', fundamental_freq=50):
     # Compute FFT
     frequencies, magnitude = compute_fft(df[signal_type], fs)
     
+    # Get fundamental magnitude for percentage calculation
+    fundamental_idx = np.argmin(np.abs(frequencies - fundamental_freq))
+    fundamental_magnitude = magnitude[fundamental_idx]
+    
     # Find harmonics (fundamental, 2nd, 3rd, 4th, 5th, etc.)
     harmonics_data = []
+    n_samples = len(frequencies)
+    freq_tolerance = fs / n_samples  # Frequency resolution
     
     for harmonic_num in range(1, 11):  # Analyze up to 10th harmonic
         harmonic_freq = fundamental_freq * harmonic_num
         
         # Find the closest frequency bin
-        freq_tolerance = fs / len(df)  # Frequency resolution
         freq_idx = np.argmin(np.abs(frequencies - harmonic_freq))
         
         if np.abs(frequencies[freq_idx] - harmonic_freq) < freq_tolerance * 2:
+            harmonic_magnitude = magnitude[freq_idx]
+            magnitude_percent = (harmonic_magnitude / fundamental_magnitude) * 100 if harmonic_num > 1 else 100
+            
             harmonics_data.append({
-                'Harmonic': f'{harmonic_num}{"st" if harmonic_num == 1 else "nd" if harmonic_num == 2 else "rd" if harmonic_num == 3 else "th"}',
+                'Harmonic': f'{harmonic_num}{_get_ordinal_suffix(harmonic_num)}',
                 'Frequency (Hz)': frequencies[freq_idx],
-                'Magnitude': magnitude[freq_idx],
-                'Magnitude (%)': (magnitude[freq_idx] / magnitude[np.argmin(np.abs(frequencies - fundamental_freq))]) * 100 if harmonic_num > 1 else 100
+                'Magnitude': harmonic_magnitude,
+                'Magnitude (%)': magnitude_percent
             })
     
     # Create DataFrame
